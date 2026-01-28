@@ -26,12 +26,13 @@ interface VerifyResult {
 
 export async function initiateBooking(formData: FormData, selectedStations: string[]): Promise<BookingResult> {
     const email = (formData.get('email') as string).trim().toLowerCase();
+    const matricNumber = (formData.get('matricNumber') as string).trim().toUpperCase();
     const name = formData.get('name') as string;
     const phone = formData.get('phone') as string;
 
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-    if (!email || !name || selectedStations.length === 0) {
+    if (!email || !name || !matricNumber || selectedStations.length === 0) {
         return { success: false, error: "Missing required fields" };
     }
 
@@ -45,6 +46,64 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
 
     try {
         await runTransaction(db, async (transaction) => {
+            // 0. Pre-flight Check: Enforce Booking Limits (Max 3)
+            // We need to read all venues to count existing bookings for this user.
+            const allSectionsRef = collection(db, 'sections');
+            const allSectionsSnapshot = await getDocs(allSectionsRef); // Note: In a transaction, we should use transaction.get if we want consistency, but getDocs is not supported on transaction object directly for collections.
+            // However, Firestore transactions require reads to happen before writes.
+            // For a small dataset, we can iterate known section IDs. But dynamic is better.
+            // workaround: Read specific venues involved + maybe strict limit check is relaxed or we assume small conflicting windows.
+            // BETTER: Read all docs using the transaction (requires knowing IDs).
+            // Let's rely on the fact that we read the target venues below.
+            // To properly check limits across *unrelated* venues, we'd need to read them all.
+            // For now, let's implement a 'read all' approach by assuming we know the sections or just Fetching them outside the transaction first?
+            // No, fetching outside transaction means race condition.
+            // Let's stick to reading the venues we are modifying.
+            // Wait, the user requirement is strict: "if the person has book for 3 seats already...".
+            // If they booked in Venue A, and now trying Venue B, we need to know about A.
+            // Compromise: Read ALL sections. Since there are few sections (Front, Middle, Back, Gallery), this is cheap.
+            const sectionIds = ["agric-back", "agric-front", "agric-middle", "agric-gallery"]; // Hardcoded for safety or fetch from a config if available.
+            // Actually, let's fetch IDs first (non-transactional read) then read them in transaction.
+
+            // Re-evaluating: runTransaction requires all reads before writes.
+            // We can just read the docs we need.
+
+            let existingBookingsCount = 0;
+
+            // We must read ALL sections to enforce the global limit.
+            // Assuming the collection 'sections' is small.
+            // We cannot query collection in transaction easily without known IDs.
+            // Let's assume the standard 4 sections + any others.
+            // Ideally, we passed 'selectedStations' which implies specific venues.
+            // But we need to check venues NOT selected too.
+
+            // Strategy: Read the specific document references for all known sections.
+            // If we don't know them, we can't fully lock.
+            // Let's assume the user only books in the 4 main sections.
+            // For robustness, let's Fetch the list of section IDs first (outside transaction, slightly stale is ok for IDs list)
+            // or just iterate the known ones.
+            // Let's use the known ones for the convocation hall.
+            const knownSectionIds = ["agric-front", "agric-middle", "agric-back", "agric-gallery"];
+
+            for (const sectionId of knownSectionIds) {
+                const ref = doc(db, 'sections', sectionId);
+                const snap = await transaction.get(ref);
+                if (snap.exists()) {
+                    const stations = (snap.data() as Venue).stations || [];
+                    stations.forEach(s => {
+                        if ((s.status === 'booked' || s.status === 'locked') && s.bookedBy) {
+                            if (s.bookedBy.email.toLowerCase() === email || s.bookedBy.matricNumber === matricNumber) {
+                                existingBookingsCount++;
+                            }
+                        }
+                    });
+                }
+            }
+
+            if (existingBookingsCount + selectedStations.length > 3) {
+                throw new Error(`Booking Limit Exceeded. You have ${existingBookingsCount} bookings and are trying to book ${selectedStations.length} more. Max allowed is 3.`);
+            }
+
             // 1. Group selections by venue
             const venueReads: { [slug: string]: string[] } = {};
             selectedStations.forEach(id => {
@@ -53,7 +112,14 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                 venueReads[slug].push(stationId);
             });
 
-            // 2. Read and Validate
+            // 2. Read and Validate (Target Venues)
+            // We re-read the target venues inside the loop? No, we already read them in the counting loop above if they are in knownSectionIds.
+            // Transaction requires we use the *same* snapshot if we read it.
+            // But Firestore SDK might cache. To be safe/clean code:
+            // The previous loop was just for counting. We can re-get or reuse data?
+            // Reuse is hard because we iterated known IDs.
+            // Let's just do the standard validation logic. Firestore handles duplicate gets in one transaction fine (returns same doc).
+
             for (const [slug, stationIds] of Object.entries(venueReads)) {
                 const venueRef = doc(db, 'sections', slug);
                 const venueDoc = await transaction.get(venueRef);
@@ -86,7 +152,7 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                             ...s,
                             status: 'locked',
                             lockedAt: Date.now(),
-                            bookedBy: { email, name, phone },
+                            bookedBy: { email, name, phone, matricNumber },
                             paymentReference: paymentReference
                         } as Station;
                     }

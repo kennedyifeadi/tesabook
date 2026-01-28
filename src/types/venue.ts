@@ -7,6 +7,7 @@ export interface Station {
         email: string;
         name: string;
         phone: string;
+        matricNumber: string;
     };
     paymentReference?: string;
 }

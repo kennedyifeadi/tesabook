@@ -58,6 +58,10 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Matric Number</label>
+                        <input name="matricNumber" required type="text" placeholder="e.g. 1904080..." className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
+                    </div>
+                    <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
                         <input name="name" required type="text" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
                     </div>
