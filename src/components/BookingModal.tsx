@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { initiateBooking } from '@/actions/booking';
+import { initiateBooking } from '@/actions/payment';
 import { toast } from 'sonner';
 
 interface BookingModalProps {

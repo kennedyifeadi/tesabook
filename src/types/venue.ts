@@ -1,8 +1,13 @@
 export interface Station {
     id: string;
-    status: 'available' | 'pending' | 'booked';
+    status: 'available' | 'locked' | 'pending' | 'booked';
     lockedAt?: number;
     lockedBy?: string; // userId or email
+    bookedBy?: {
+        email: string;
+        name: string;
+        phone: string;
+    };
     paymentReference?: string;
 }
 

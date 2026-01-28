@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
-import BookingReceiptEmail from '@/emails/BookingReceiptEmail';
+import BookingReceipt from '@/emails/BookingReceipt';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY);
 
 interface ReceiptData {
     email: string;
@@ -13,7 +13,7 @@ interface ReceiptData {
 }
 
 export async function sendReceipt(data: ReceiptData) {
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.NEXT_PUBLIC_RESEND_API_KEY) {
         console.warn("RESEND_API_KEY is missing. Email skipped.");
         return;
     }
@@ -23,7 +23,7 @@ export async function sendReceipt(data: ReceiptData) {
             from: 'TESA Convocation <bookings@resend.dev>', // Change this if you have a verified domain
             to: [data.email],
             subject: `Booking Confirmed - ${data.transactionRef}`,
-            react: <BookingReceiptEmail
+            react: <BookingReceipt
                 customerName={data.name}
                 bookingDetails={data.bookingDetails}
                 transactionRef={data.transactionRef}
