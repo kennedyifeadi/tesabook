@@ -8,6 +8,12 @@ export interface Station {
         name: string;
         phone: string;
         matricNumber: string;
+        rentals?: {
+            chairs: number;
+            tables: number;
+            logisticsFee: number;
+            totalRentalCost: number;
+        };
     };
     paymentReference?: string;
 }

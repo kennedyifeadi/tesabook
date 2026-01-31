@@ -30,6 +30,10 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
     const name = formData.get('name') as string;
     const phone = formData.get('phone') as string;
 
+    // Parse Rental Data
+    const chairs = parseInt(formData.get('chairs') as string) || 0;
+    const tables = parseInt(formData.get('tables') as string) || 0;
+
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     if (!email || !name || !matricNumber || selectedStations.length === 0) {
@@ -41,7 +45,12 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
         return { success: false, error: "Server Configuration Error" };
     }
 
-    const totalAmount = selectedStations.length * STATION_PRICE;
+    // Server-Side Calculation
+    const seatTotal = selectedStations.length * STATION_PRICE;
+    const rentalCost = (chairs * 2500) + (tables * 2500);
+    const logistics = (chairs > 0 || tables > 0) ? 2000 : 0;
+    const totalAmount = seatTotal + rentalCost + logistics;
+
     const paymentReference = `TESA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     try {
@@ -152,7 +161,18 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                             ...s,
                             status: 'locked',
                             lockedAt: Date.now(),
-                            bookedBy: { email, name, phone, matricNumber },
+                            bookedBy: {
+                                email,
+                                name,
+                                phone,
+                                matricNumber,
+                                rentals: {
+                                    chairs,
+                                    tables,
+                                    logisticsFee: logistics,
+                                    totalRentalCost: rentalCost + logistics
+                                }
+                            },
                             paymentReference: paymentReference
                         } as Station;
                     }
@@ -173,6 +193,11 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
             };
         }
 
+        let description = `Convocation Booking - ${selectedStations.length} seats`;
+        if (chairs > 0) description += `, ${chairs} Dozen Chairs`;
+        if (tables > 0) description += `, ${tables} Tables`;
+        if (logistics > 0) description += ` + Logistics`;
+
         // 4. Ercas Pay Integration
         const payload = {
             amount: totalAmount,
@@ -183,7 +208,7 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
             customerPhoneNumber: phone,
             redirectUrl: `${BASE_URL}/payment/callback`,
             currency: "NGN",
-            description: `Convocation Booking - ${selectedStations.length} seats`
+            description: description
         };
 
         const targetUrl = `${ERCAS_BASE_URL}/payment/initiate`;
@@ -295,6 +320,7 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
         const bookedStationIds: string[] = [];
         let purchaserEmail = '';
         let purchaserName = '';
+        let rentalDetails: any = null;
 
         snapshot.docs.forEach(docSnap => {
             const venue = docSnap.data() as Venue;
@@ -312,6 +338,9 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
                         if (s.bookedBy) {
                             purchaserEmail = s.bookedBy.email;
                             purchaserName = s.bookedBy.name;
+                            if (s.bookedBy.rentals) {
+                                rentalDetails = s.bookedBy.rentals;
+                            }
                         }
 
                         if (isPaymentSuccessful) {
@@ -352,7 +381,10 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
                     bookingDetails: bookedStationIds,
                     transactionRef: merchantReference,
                     amount: apiData.responseBody?.amount || 0,
-                    date: new Date().toLocaleDateString()
+                    date: new Date().toLocaleDateString(),
+                    chairs: rentalDetails?.chairs || 0,
+                    tables: rentalDetails?.tables || 0,
+                    logisticsFee: rentalDetails?.logisticsFee || 0
                 });
             }
 

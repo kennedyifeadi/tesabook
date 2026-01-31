@@ -19,6 +19,9 @@ interface BookingReceiptProps {
     transactionRef?: string;
     amount?: number;
     date?: string;
+    chairs?: number;
+    tables?: number;
+    logisticsFee?: number;
 }
 
 export const BookingReceipt = ({
@@ -26,7 +29,10 @@ export const BookingReceipt = ({
     bookingDetails = ["NLNG Front - Seat 5", "NLNG Back - Seat 12"],
     transactionRef = "REF-123456789",
     amount = 13000,
-    date = "October 24, 2025"
+    date = "October 24, 2025",
+    chairs = 0,
+    tables = 0,
+    logisticsFee = 0
 }: BookingReceiptProps) => {
     return (
         <Html>
@@ -80,7 +86,7 @@ export const BookingReceipt = ({
                             </Text>
 
                             <Text className="m-0 text-[12px] text-gray-500 uppercase tracking-widest">
-                                Seats Reserved
+                                Tents Reserved
                             </Text>
                             <ul className="pl-5 m-0 mb-[20px]">
                                 {bookingDetails.map((detail, index) => (
@@ -89,6 +95,31 @@ export const BookingReceipt = ({
                                     </li>
                                 ))}
                             </ul>
+
+                            {(chairs > 0 || tables > 0) && (
+                                <>
+                                    <Text className="m-0 text-[12px] text-gray-500 uppercase tracking-widest mt-4">
+                                        Extras
+                                    </Text>
+                                    <ul className="pl-5 m-0 mb-[20px]">
+                                        {chairs > 0 && (
+                                            <li className="text-[14px] font-medium text-black mb-1">
+                                                Rental: {chairs} Dozen Chairs
+                                            </li>
+                                        )}
+                                        {tables > 0 && (
+                                            <li className="text-[14px] font-medium text-black mb-1">
+                                                Rental: {tables} Tables
+                                            </li>
+                                        )}
+                                        {logisticsFee > 0 && (
+                                            <li className="text-[14px] font-medium text-black mb-1">
+                                                Logistics Fee: ₦{logisticsFee.toLocaleString()}
+                                            </li>
+                                        )}
+                                    </ul>
+                                </>
+                            )}
 
                             <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
 

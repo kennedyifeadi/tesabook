@@ -10,6 +10,9 @@ interface ReceiptData {
     transactionRef: string;
     amount: number;
     date: string;
+    chairs?: number;
+    tables?: number;
+    logisticsFee?: number;
 }
 
 export async function sendReceipt(data: ReceiptData) {
@@ -29,6 +32,9 @@ export async function sendReceipt(data: ReceiptData) {
                 transactionRef={data.transactionRef}
                 amount={data.amount}
                 date={data.date}
+                chairs={data.chairs}
+                tables={data.tables}
+                logisticsFee={data.logisticsFee}
             />,
         });
 
