@@ -21,6 +21,7 @@ interface BookingReceiptProps {
     date?: string;
     chairs?: number;
     tables?: number;
+    baseFee?: number;
     logisticsFee?: number;
 }
 
@@ -32,6 +33,7 @@ export const BookingReceipt = ({
     date = "October 24, 2025",
     chairs = 0,
     tables = 0,
+    baseFee = 2000,
     logisticsFee = 0
 }: BookingReceiptProps) => {
     return (
@@ -67,7 +69,7 @@ export const BookingReceipt = ({
                             Hello {customerName},
                         </Text>
                         <Text className="text-black text-[14px] leading-[24px]">
-                            Thank you for booking your seat(s) for the convocation ceremony. Your payment has been processed successfully.
+                            Thank you for booking your tent(s) for the convocation ceremony. Your payment has been processed successfully.
                         </Text>
 
                         <Section className="mt-[32px] mb-[32px] p-[20px] bg-gray-50 rounded">
@@ -96,12 +98,17 @@ export const BookingReceipt = ({
                                 ))}
                             </ul>
 
-                            {(chairs > 0 || tables > 0) && (
+                            {(chairs > 0 || tables > 0 || baseFee > 0) && (
                                 <>
                                     <Text className="m-0 text-[12px] text-gray-500 uppercase tracking-widest mt-4">
                                         Extras
                                     </Text>
                                     <ul className="pl-5 m-0 mb-[20px]">
+                                        {baseFee > 0 && (
+                                            <li className="text-[14px] font-medium text-black mb-1">
+                                                Base Booking Fee: ₦{baseFee.toLocaleString()}
+                                            </li>
+                                        )}
                                         {chairs > 0 && (
                                             <li className="text-[14px] font-medium text-black mb-1">
                                                 Rental: {chairs} Dozen Chairs

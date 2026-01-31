@@ -11,8 +11,11 @@ export interface Station {
         rentals?: {
             chairs: number;
             tables: number;
-            logisticsFee: number;
-            totalRentalCost: number;
+        };
+        fees?: {
+            base: number;
+            logistics: number;
+            rentalTotal: number;
         };
     };
     paymentReference?: string;

@@ -6,6 +6,8 @@ import { Station, Venue } from '@/types/venue';
 import { sendReceipt } from '@/lib/email';
 
 const STATION_PRICE = 6500;
+const BASE_BOOKING_FEE = 2500;
+const LOGISTICS_FEE = 2000;
 // Use the Staging URL for testing. Switch to 'api.ercaspay.com' only when going live.
 const ERCAS_BASE_URL = 'https://api-staging.ercaspay.com/api/v1';
 
@@ -46,10 +48,12 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
     }
 
     // Server-Side Calculation
+    // Server-Side Calculation
     const seatTotal = selectedStations.length * STATION_PRICE;
     const rentalCost = (chairs * 2500) + (tables * 2500);
-    const logistics = (chairs > 0 || tables > 0) ? 2000 : 0;
-    const totalAmount = seatTotal + rentalCost + logistics;
+    const hasEquipment = chairs > 0 || tables > 0;
+    const logistics = hasEquipment ? LOGISTICS_FEE : 0;
+    const totalAmount = seatTotal + rentalCost + logistics + BASE_BOOKING_FEE;
 
     const paymentReference = `TESA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -168,9 +172,12 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                                 matricNumber,
                                 rentals: {
                                     chairs,
-                                    tables,
-                                    logisticsFee: logistics,
-                                    totalRentalCost: rentalCost + logistics
+                                    tables
+                                },
+                                fees: {
+                                    base: BASE_BOOKING_FEE,
+                                    logistics: logistics,
+                                    rentalTotal: rentalCost
                                 }
                             },
                             paymentReference: paymentReference
@@ -197,6 +204,7 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
         if (chairs > 0) description += `, ${chairs} Dozen Chairs`;
         if (tables > 0) description += `, ${tables} Tables`;
         if (logistics > 0) description += ` + Logistics`;
+        description += ` + Base Fee`;
 
         // 4. Ercas Pay Integration
         const payload = {
@@ -320,7 +328,8 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
         const bookedStationIds: string[] = [];
         let purchaserEmail = '';
         let purchaserName = '';
-        let rentalDetails: any = null;
+        let rentalCounts: any = null;
+        let feeDetails: any = null;
 
         snapshot.docs.forEach(docSnap => {
             const venue = docSnap.data() as Venue;
@@ -339,7 +348,15 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
                             purchaserEmail = s.bookedBy.email;
                             purchaserName = s.bookedBy.name;
                             if (s.bookedBy.rentals) {
-                                rentalDetails = s.bookedBy.rentals;
+                                rentalCounts = s.bookedBy.rentals;
+                            }
+                            if (s.bookedBy.fees) {
+                                feeDetails = s.bookedBy.fees;
+                            } else if (s.bookedBy.rentals && (s.bookedBy.rentals as any).logisticsFee) {
+                                // Fallback for old records
+                                feeDetails = {
+                                    logistics: (s.bookedBy.rentals as any).logisticsFee
+                                };
                             }
                         }
 
@@ -382,9 +399,10 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
                     transactionRef: merchantReference,
                     amount: apiData.responseBody?.amount || 0,
                     date: new Date().toLocaleDateString(),
-                    chairs: rentalDetails?.chairs || 0,
-                    tables: rentalDetails?.tables || 0,
-                    logisticsFee: rentalDetails?.logisticsFee || 0
+                    chairs: rentalCounts?.chairs || 0,
+                    tables: rentalCounts?.tables || 0,
+                    baseFee: feeDetails?.base || 2000,
+                    logisticsFee: feeDetails?.logistics || 0
                 });
             }
 

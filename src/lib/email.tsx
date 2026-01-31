@@ -12,6 +12,7 @@ interface ReceiptData {
     date: string;
     chairs?: number;
     tables?: number;
+    baseFee?: number;
     logisticsFee?: number;
 }
 
@@ -34,6 +35,7 @@ export async function sendReceipt(data: ReceiptData) {
                 date={data.date}
                 chairs={data.chairs}
                 tables={data.tables}
+                baseFee={data.baseFee}
                 logisticsFee={data.logisticsFee}
             />,
         });

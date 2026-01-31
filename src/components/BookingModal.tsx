@@ -19,7 +19,7 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
     const seatTotal = selectedStations.length * STATION_PRICE;
     const extrasTotal = (chairCount * 2500) + (tableCount * 2500);
     const logisticsFee = (chairCount > 0 || tableCount > 0) ? 2000 : 0;
-    const totalAmount = seatTotal + extrasTotal + logisticsFee;
+    const totalAmount = seatTotal + extrasTotal + logisticsFee + 2500;
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -56,6 +56,10 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
                     <div className="flex justify-between text-sm text-indigo-700">
                         <span>Selected Tents ({selectedStations.length}):</span>
                         <span className="font-semibold">₦{seatTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-indigo-700">
+                        <span>Booking Fee:</span>
+                        <span className="font-semibold">₦2,500</span>
                     </div>
                     {(chairCount > 0 || tableCount > 0) && (
                         <>
