@@ -40,7 +40,7 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
         return { success: false, error: "Missing required fields" };
     }
 
-    if (!USE_MOCK_PAYMENT && !process.env.NEXT_PUBLIC_ERCAS_SECRET_KEY) {
+    if (!USE_MOCK_PAYMENT && !process.env.ERCAS_SECRET_KEY) {
         console.error("CRITICAL: ERCAS_SECRET_KEY is missing from environment variables.");
         return { success: false, error: "Server Configuration Error" };
     }
@@ -213,12 +213,12 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
 
         const targetUrl = `${ERCAS_BASE_URL}/payment/initiate`;
         console.log("DEBUG: Ercas URL:", targetUrl);
-        // console.log("DEBUG: Auth Header:", `Bearer ${process.env.NEXT_PUBLIC_ERCAS_SECRET_KEY?.substring(0, 5)}...`);
+        // console.log("DEBUG: Auth Header:", `Bearer ${process.env.ERCAS_SECRET_KEY?.substring(0, 5)}...`);
 
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ERCAS_SECRET_KEY}`,
+                'Authorization': `Bearer ${process.env.ERCAS_SECRET_KEY}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
@@ -280,7 +280,7 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
             const response = await fetch(verifyUrl, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ERCAS_SECRET_KEY}`,
+                    'Authorization': `Bearer ${process.env.ERCAS_SECRET_KEY}`,
                     'Accept': 'application/json'
                 }
             });

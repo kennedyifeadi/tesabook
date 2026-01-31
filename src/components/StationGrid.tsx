@@ -29,7 +29,7 @@ export default function StationGrid({ venue, selectedStations, onToggleSelect, o
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900">{venue.name}</h2>
-                        <p className="text-sm text-slate-500">Select up to 3 seats</p>
+                        <p className="text-sm text-slate-500">Select up to 3 tents</p>
                     </div>
                     <button
                         onClick={onClose}

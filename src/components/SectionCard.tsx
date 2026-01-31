@@ -38,7 +38,7 @@ export default function SectionCard({ venue, onClick }: SectionCardProps) {
                 />
             </div>
             <p className="text-xs text-slate-500 mt-2 text-right">
-                {venue.capacity} Total Seats
+                {venue.capacity} Total Tents
             </p>
         </div>
     );
