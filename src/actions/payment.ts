@@ -5,9 +5,10 @@ import { collection, getDocs, doc, writeBatch, runTransaction } from 'firebase/f
 import { Station, Venue } from '@/types/venue';
 import { sendReceipt } from '@/lib/email';
 
-const STATION_PRICE = 6500;
-const BASE_BOOKING_FEE = 2500;
-const LOGISTICS_FEE = 2000;
+const TENT_PRICE = 6500;
+const TABLE_PRICE = 2000;
+const CHAIR_PRICE = 2500;
+const LOGISTICS_FEE = 3000;
 // Use the Staging URL for testing. Switch to 'api.ercaspay.com' only when going live.
 const ERCAS_BASE_URL = 'https://api-staging.ercaspay.com/api/v1';
 
@@ -29,6 +30,7 @@ interface VerifyResult {
 export async function initiateBooking(formData: FormData, selectedStations: string[]): Promise<BookingResult> {
     const email = (formData.get('email') as string).trim().toLowerCase();
     const matricNumber = (formData.get('matricNumber') as string).trim().toUpperCase();
+    const tentName = (formData.get('tentName') as string).trim();
     const name = formData.get('name') as string;
     const phone = formData.get('phone') as string;
 
@@ -38,7 +40,7 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
 
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-    if (!email || !name || !matricNumber || selectedStations.length === 0) {
+    if (!email || !name || !tentName || !matricNumber || selectedStations.length === 0) {
         return { success: false, error: "Missing required fields" };
     }
 
@@ -48,54 +50,21 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
     }
 
     // Server-Side Calculation
-    // Server-Side Calculation
-    const seatTotal = selectedStations.length * STATION_PRICE;
-    const rentalCost = (chairs * 2500) + (tables * 2500);
-    const hasEquipment = chairs > 0 || tables > 0;
-    const logistics = hasEquipment ? LOGISTICS_FEE : 0;
-    const totalAmount = seatTotal + rentalCost + logistics + BASE_BOOKING_FEE;
+    const seatTotal = selectedStations.length * TENT_PRICE;
+    const rentalCost = (chairs * CHAIR_PRICE) + (tables * TABLE_PRICE);
+    const totalAmount = seatTotal + rentalCost + LOGISTICS_FEE;
 
     const paymentReference = `TESA-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     try {
         await runTransaction(db, async (transaction) => {
-            // 0. Pre-flight Check: Enforce Booking Limits (Max 3)
-            // We need to read all venues to count existing bookings for this user.
-            const allSectionsRef = collection(db, 'sections');
-            const allSectionsSnapshot = await getDocs(allSectionsRef); // Note: In a transaction, we should use transaction.get if we want consistency, but getDocs is not supported on transaction object directly for collections.
-            // However, Firestore transactions require reads to happen before writes.
-            // For a small dataset, we can iterate known section IDs. But dynamic is better.
-            // workaround: Read specific venues involved + maybe strict limit check is relaxed or we assume small conflicting windows.
-            // BETTER: Read all docs using the transaction (requires knowing IDs).
-            // Let's rely on the fact that we read the target venues below.
-            // To properly check limits across *unrelated* venues, we'd need to read them all.
-            // For now, let's implement a 'read all' approach by assuming we know the sections or just Fetching them outside the transaction first?
-            // No, fetching outside transaction means race condition.
-            // Let's stick to reading the venues we are modifying.
-            // Wait, the user requirement is strict: "if the person has book for 3 seats already...".
-            // If they booked in Venue A, and now trying Venue B, we need to know about A.
-            // Compromise: Read ALL sections. Since there are few sections (Front, Middle, Back, Gallery), this is cheap.
-            const sectionIds = ["agric-back", "agric-front", "agric-middle", "agric-gallery"]; // Hardcoded for safety or fetch from a config if available.
-            // Actually, let's fetch IDs first (non-transactional read) then read them in transaction.
-
-            // Re-evaluating: runTransaction requires all reads before writes.
-            // We can just read the docs we need.
+            // 0. Pre-flight Check: Enforce Strict Booking Limits (Max 2)
+            // We scan ALL sections to count how many active bookings exist for:
+            // 1. The User's Email
+            // 2. The User's Matric Number
+            // 3. The User's Preferred Name of Tent (New!)
 
             let existingBookingsCount = 0;
-
-            // We must read ALL sections to enforce the global limit.
-            // Assuming the collection 'sections' is small.
-            // We cannot query collection in transaction easily without known IDs.
-            // Let's assume the standard 4 sections + any others.
-            // Ideally, we passed 'selectedStations' which implies specific venues.
-            // But we need to check venues NOT selected too.
-
-            // Strategy: Read the specific document references for all known sections.
-            // If we don't know them, we can't fully lock.
-            // Let's assume the user only books in the 4 main sections.
-            // For robustness, let's Fetch the list of section IDs first (outside transaction, slightly stale is ok for IDs list)
-            // or just iterate the known ones.
-            // Let's use the known ones for the convocation hall.
             const knownSectionIds = ["agric-front", "agric-middle", "agric-back", "agric-gallery"];
 
             for (const sectionId of knownSectionIds) {
@@ -105,7 +74,13 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                     const stations = (snap.data() as Venue).stations || [];
                     stations.forEach(s => {
                         if ((s.status === 'booked' || s.status === 'locked') && s.bookedBy) {
-                            if (s.bookedBy.email.toLowerCase() === email || s.bookedBy.matricNumber === matricNumber) {
+                            const b = s.bookedBy;
+                            // Check all identifiers
+                            const sameEmail = b.email.toLowerCase() === email;
+                            const sameMatric = b.matricNumber === matricNumber; // matric is already uppercased
+                            const sameTentName = b.tentName && b.tentName.toLowerCase() === tentName.toLowerCase();
+
+                            if (sameEmail || sameMatric || sameTentName) {
                                 existingBookingsCount++;
                             }
                         }
@@ -113,8 +88,9 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                 }
             }
 
-            if (existingBookingsCount + selectedStations.length > 3) {
-                throw new Error(`Booking Limit Exceeded. You have ${existingBookingsCount} bookings and are trying to book ${selectedStations.length} more. Max allowed is 3.`);
+            // Strict Validation: Max 2 Tents Total
+            if (existingBookingsCount + selectedStations.length > 2) {
+                throw new Error(`Booking Limit Reached (Max 2 Tents per Student/Family). You already have ${existingBookingsCount} active bookings.`);
             }
 
             // 1. Group selections by venue
@@ -170,13 +146,14 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
                                 name,
                                 phone,
                                 matricNumber,
+                                tentName,
                                 rentals: {
                                     chairs,
                                     tables
                                 },
                                 fees: {
-                                    base: BASE_BOOKING_FEE,
-                                    logistics: logistics,
+                                    base: 0,
+                                    logistics: LOGISTICS_FEE,
                                     rentalTotal: rentalCost
                                 }
                             },
@@ -200,11 +177,10 @@ export async function initiateBooking(formData: FormData, selectedStations: stri
             };
         }
 
-        let description = `Convocation Booking - ${selectedStations.length} seats`;
+        let description = `Convocation Booking - ${selectedStations.length} Tents (${tentName})`;
         if (chairs > 0) description += `, ${chairs} Dozen Chairs`;
         if (tables > 0) description += `, ${tables} Tables`;
-        if (logistics > 0) description += ` + Logistics`;
-        description += ` + Base Fee`;
+        description += ` + Logistics & Fees`;
 
         // 4. Ercas Pay Integration
         const payload = {
@@ -328,6 +304,7 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
         const bookedStationIds: string[] = [];
         let purchaserEmail = '';
         let purchaserName = '';
+        let tentName = '';
         let rentalCounts: any = null;
         let feeDetails: any = null;
 
@@ -347,6 +324,9 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
                         if (s.bookedBy) {
                             purchaserEmail = s.bookedBy.email;
                             purchaserName = s.bookedBy.name;
+                            if (s.bookedBy.tentName) {
+                                tentName = s.bookedBy.tentName;
+                            }
                             if (s.bookedBy.rentals) {
                                 rentalCounts = s.bookedBy.rentals;
                             }
@@ -401,8 +381,9 @@ export async function verifyTransaction(merchantReference: string, ercasReferenc
                     date: new Date().toLocaleDateString(),
                     chairs: rentalCounts?.chairs || 0,
                     tables: rentalCounts?.tables || 0,
-                    baseFee: feeDetails?.base || 2000,
-                    logisticsFee: feeDetails?.logistics || 0
+                    baseFee: feeDetails?.base || 0,
+                    logisticsFee: feeDetails?.logistics || 0,
+                    tentName: tentName
                 });
             }
 

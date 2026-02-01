@@ -8,6 +8,7 @@ export interface Station {
         name: string;
         phone: string;
         matricNumber: string;
+        tentName: string;
         rentals?: {
             chairs: number;
             tables: number;

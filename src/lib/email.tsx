@@ -14,6 +14,7 @@ interface ReceiptData {
     tables?: number;
     baseFee?: number;
     logisticsFee?: number;
+    tentName?: string;
 }
 
 export async function sendReceipt(data: ReceiptData) {
@@ -37,6 +38,7 @@ export async function sendReceipt(data: ReceiptData) {
                 tables={data.tables}
                 baseFee={data.baseFee}
                 logisticsFee={data.logisticsFee}
+                tentName={data.tentName}
             />,
         });
 

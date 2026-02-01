@@ -17,9 +17,9 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
     const [tableCount, setTableCount] = useState(0);
 
     const seatTotal = selectedStations.length * STATION_PRICE;
-    const extrasTotal = (chairCount * 2500) + (tableCount * 2500);
-    const logisticsFee = (chairCount > 0 || tableCount > 0) ? 2000 : 0;
-    const totalAmount = seatTotal + extrasTotal + logisticsFee + 2500;
+    const extrasTotal = (chairCount * 2500) + (tableCount * 2000);
+    const logisticsFee = 3000;
+    const totalAmount = seatTotal + extrasTotal + logisticsFee;
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -57,22 +57,16 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
                         <span>Selected Tents ({selectedStations.length}):</span>
                         <span className="font-semibold">₦{seatTotal.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-indigo-700">
-                        <span>Booking Fee:</span>
-                        <span className="font-semibold">₦2,500</span>
-                    </div>
-                    {(chairCount > 0 || tableCount > 0) && (
-                        <>
-                            <div className="flex justify-between text-sm text-indigo-700">
-                                <span>Equipment:</span>
-                                <span className="font-semibold">₦{extrasTotal.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between text-sm text-indigo-700">
-                                <span>Logistics Fee:</span>
-                                <span className="font-semibold">₦{logisticsFee.toLocaleString()}</span>
-                            </div>
-                        </>
+                    {extrasTotal > 0 && (
+                        <div className="flex justify-between text-sm text-indigo-700">
+                            <span>Equipment:</span>
+                            <span className="font-semibold">₦{extrasTotal.toLocaleString()}</span>
+                        </div>
                     )}
+                    <div className="flex justify-between text-sm text-indigo-700">
+                        <span>Logistics Fee:</span>
+                        <span className="font-semibold">₦{logisticsFee.toLocaleString()}</span>
+                    </div>
                     <div className="border-t border-indigo-200 my-2 pt-2 flex justify-between text-base font-bold text-indigo-900">
                         <span>Total to Pay:</span>
                         <span>₦{totalAmount.toLocaleString()}</span>
@@ -102,7 +96,7 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
                         <div className="flex justify-between items-center">
                             <div>
                                 <p className="text-sm font-medium text-slate-700">Tables (Per Unit)</p>
-                                <p className="text-xs text-slate-500">₦2,500 / unit</p>
+                                <p className="text-xs text-slate-500">₦2,000 / unit</p>
                             </div>
                             <div className="flex items-center space-x-3">
                                 <button type="button" onClick={() => setTableCount(Math.max(0, tableCount - 1))} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">-</button>
@@ -112,6 +106,10 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
                         </div>
                     </div>
 
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Preferred Name of Tent</label>
+                        <input name="tentName" required type="text" placeholder="e.g. The Johnson Family" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Matric Number</label>
                         <input name="matricNumber" required type="text" placeholder="e.g. 1904080..." className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
