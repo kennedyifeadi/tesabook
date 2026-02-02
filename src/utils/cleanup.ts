@@ -1,6 +1,8 @@
+'use server';
+
 import { db } from '@/lib/firebase';
-import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { Venue } from '@/types/venue';
+import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { Venue, Station } from '@/types/venue';
 
 const LOCK_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -18,14 +20,18 @@ export async function releaseExpiredLocks() {
             let needsUpdate = false;
 
             const newStations = stations.map(s => {
-                // Check if pending AND expired
-                if (s.status === 'pending' && s.lockedAt && (now - s.lockedAt > LOCK_TIMEOUT_MS)) {
+                // Check if LOCKED and expired
+                if (s.status === 'locked' && s.lockedAt && (now - s.lockedAt > LOCK_TIMEOUT_MS)) {
                     needsUpdate = true;
-                    return {
+                    // Reset to available
+                    // We must NOT return undefined for fields if we want them gone?
+                    // Actually, in Firestore update, we replace the object in the array.
+                    // So returning a clean object without those keys is fine.
+                    const cleanStation: Station = {
                         id: s.id,
                         status: 'available'
-                        // Remove lockedAt, lockedBy, paymentReference by strictly setting fields or letting them be undefined
                     };
+                    return cleanStation;
                 }
                 return s;
             });

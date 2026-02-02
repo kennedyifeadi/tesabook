@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { Venue } from '@/types/venue';
+import { releaseExpiredLocks } from '@/utils/cleanup';
 
 export function useRealTimeSections() {
     const [sections, setSections] = useState<Venue[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Run cleanup on mount (lazy cleanup)
+    useEffect(() => {
+        releaseExpiredLocks().catch(console.error);
+    }, []);
 
     useEffect(() => {
         const q = query(collection(db, 'sections'), orderBy('name'));
