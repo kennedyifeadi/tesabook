@@ -9,8 +9,8 @@ const TENT_PRICE = 6500;
 const TABLE_PRICE = 2000;
 const CHAIR_PRICE = 2500;
 const LOGISTICS_FEE = 3000;
-// Use the Staging URL for testing. Switch to 'api.ercaspay.com' only when going live.
-const ERCAS_BASE_URL = 'https://api-staging.ercaspay.com/api/v1';
+
+const ERCAS_BASE_URL = process.env.NEXT_PUBLIC_ERCAS_BASE_URL;
 
 const USE_MOCK_PAYMENT = false; // Set to false to use real Ercas API
 
