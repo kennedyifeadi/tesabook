@@ -10,5 +10,5 @@ export const seedVenues: Venue[] = [
     { name: 'Tractor Shed', capacity: 10 },
     { name: 'Elect Tarmac', capacity: 20 },
     { name: 'CBT', capacity: 25 },
-    { name: 'New Civil', capacity: 10 },
+    { name: 'Ftech tarmac', capacity: 10 }
 ];
