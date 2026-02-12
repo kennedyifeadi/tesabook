@@ -98,6 +98,25 @@ export default function MigratePage() {
                 >
                     Recover Bankole Booking
                 </button>
+
+                <div className="h-4"></div>
+
+                <p className="mb-2">Recover booking for Olawuyi Ibrahim (CBT - Seat 22).</p>
+                <button
+                    onClick={async () => {
+                        setStatus('Running Recovery for Olawuyi...');
+                        try {
+                            const { recoverOlawuyiBooking } = await import('@/actions/recovery');
+                            const result = await recoverOlawuyiBooking();
+                            setStatus(result.success ? `Success: ${result.message}` : `Error: ${result.error}`);
+                        } catch (e: any) {
+                            setStatus(`Error: ${e.message}`);
+                        }
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                >
+                    Recover Olawuyi Booking
+                </button>
             </div>
 
             <div className="mt-4 p-4 bg-gray-100 rounded">

@@ -161,3 +161,80 @@ export async function recoverBankoleBooking() {
         return { success: false, error: error.message };
     }
 }
+
+export async function recoverOlawuyiBooking() {
+    const venueSlug = 'cbt';
+    const stationId = '22';
+    const venueRef = doc(db, 'sections', venueSlug);
+
+    try {
+        console.log(`Starting recovery for ${venueSlug} - Seat ${stationId}...`);
+
+        const snap = await getDoc(venueRef);
+        if (!snap.exists()) {
+            return { success: false, error: "Venue cbt not found" };
+        }
+
+        const venueData = snap.data() as Venue;
+        const stations = venueData.stations || [];
+
+        // Check if station 22 exists
+        const stationIndex = stations.findIndex(s => s.id === stationId);
+        if (stationIndex === -1) {
+            return { success: false, error: "Station 22 not found in cbt" };
+        }
+
+        // Prepare the updated station object
+        const updatedStation: Station = {
+            ...stations[stationIndex],
+            status: 'booked',
+            lockedAt: Date.now(),
+            paymentReference: 'MANUAL-RECOVERY-' + Date.now(),
+            bookedBy: {
+                name: 'Olawuyi Ibrahim',
+                email: 'Ibrahimolawuyi53@gmail.com',
+                phone: '08105097676',
+                matricNumber: '223069',
+                tentName: "Olawuyi Ibrahim",
+                rentals: {
+                    chairs: 1, // 1 Dozen
+                    tables: 1
+                },
+                fees: {
+                    base: 0,
+                    logistics: 3000,
+                    rentalTotal: (1 * 2500) + (1 * 2000) // 4500
+                }
+            }
+        };
+
+        // Update the array locally
+        stations[stationIndex] = updatedStation;
+
+        // Save to Firestore
+        await updateDoc(venueRef, { stations });
+        console.log("Database updated successfully for Olawuyi.");
+
+        // Send Receipt
+        await sendReceipt({
+            email: 'Ibrahimolawuyi53@gmail.com',
+            name: 'Olawuyi Ibrahim',
+            bookingDetails: [`${venueData.name} - Seat ${stationId}`],
+            transactionRef: updatedStation.paymentReference!,
+            amount: 14000,
+            date: new Date().toDateString(),
+            chairs: 1,
+            tables: 1,
+            baseFee: 0,
+            logisticsFee: 3000,
+            tentName: "Olawuyi Ibrahim"
+        });
+
+        console.log("Recovery Email sent for Olawuyi.");
+        return { success: true, message: "Booking recovered and receipt sent for Olawuyi Ibrahim." };
+
+    } catch (error: any) {
+        console.error("Recovery failed:", error);
+        return { success: false, error: error.message };
+    }
+}
