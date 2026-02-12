@@ -22,6 +22,25 @@ export function useRealTimeSections() {
                 id: doc.id,
                 ...doc.data()
             })) as Venue[];
+
+            // Sort by availability: Most free first, sold out last
+            data.sort((a, b) => {
+                const aAvailable = a.stations?.filter(s => s.status === 'available').length || 0;
+                const bAvailable = b.stations?.filter(s => s.status === 'available').length || 0;
+
+                // If both have 0 availability, sort by name
+                if (aAvailable === 0 && bAvailable === 0) {
+                    return a.name.localeCompare(b.name);
+                }
+
+                // If one has 0 availability, put it last
+                if (aAvailable === 0) return 1;
+                if (bAvailable === 0) return -1;
+
+                // Otherwise sort by most available first
+                return bAvailable - aAvailable;
+            });
+
             setSections(data);
             setLoading(false);
         }, (err) => {
