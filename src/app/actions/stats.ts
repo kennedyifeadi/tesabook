@@ -10,10 +10,11 @@ interface BookingStats {
     totalTables: number;
 }
 
-export async function getBookingStats(): Promise<BookingStats> {
+export async function getBookingStats(): Promise<{ success: boolean; stats: BookingStats; venues: Venue[] }> {
     let totalTents = 0;
     let totalChairs = 0;
     let totalTables = 0;
+    const allVenues: Venue[] = [];
 
     try {
         const sectionsRef = collection(db, 'sections');
@@ -21,6 +22,8 @@ export async function getBookingStats(): Promise<BookingStats> {
 
         snapshot.docs.forEach((doc) => {
             const venue = doc.data() as Venue;
+            allVenues.push(venue);
+
             const stations = venue.stations || [];
 
             stations.forEach((station) => {
@@ -39,18 +42,26 @@ export async function getBookingStats(): Promise<BookingStats> {
         });
 
         return {
-            totalTents,
-            totalChairs,
-            totalTables
+            success: true,
+            stats: {
+                totalTents,
+                totalChairs,
+                totalTables
+            },
+            venues: allVenues
         };
 
     } catch (error) {
         console.error("Error fetching booking stats:", error);
         // Return zeros on error to avoid breaking the UI
         return {
-            totalTents: 0,
-            totalChairs: 0,
-            totalTables: 0
+            success: false,
+            stats: {
+                totalTents: 0,
+                totalChairs: 0,
+                totalTables: 0
+            },
+            venues: []
         };
     }
 }

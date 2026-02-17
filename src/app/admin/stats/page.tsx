@@ -1,34 +1,15 @@
-'use client';
-
 import { Suspense } from 'react';
-import { useState, useEffect } from 'react';
 import { getBookingStats } from '@/app/actions/stats';
-import { useSearchParams } from 'next/navigation';
+import AdminDashboard from '@/components/AdminDashboard';
+import RefreshButton from '@/components/RefreshButton';
 
-function StatsContent() {
-    const searchParams = useSearchParams();
-    const key = searchParams.get('key');
+interface PageProps {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-    const [stats, setStats] = useState<{ totalTents: number; totalChairs: number; totalTables: number } | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    const fetchStats = async () => {
-        setLoading(true);
-        try {
-            const data = await getBookingStats();
-            setStats(data);
-        } catch (error) {
-            console.error("Failed to fetch stats:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (key === 'my-secret-key') {
-            fetchStats();
-        }
-    }, [key]);
+export default async function StatsPage({ searchParams }: PageProps) {
+    const sp = await searchParams;
+    const key = sp?.key;
 
     if (key !== 'my-secret-key') {
         return (
@@ -40,60 +21,29 @@ function StatsContent() {
         );
     }
 
+    const { stats, venues } = await getBookingStats();
+
     return (
-        <div className="min-h-screen bg-gray-50 p-8 pt-30">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Live Booking Stats</h1>
-                    <button
-                        onClick={fetchStats}
-                        disabled={loading}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                        {loading ? 'Refreshing...' : 'Refresh Data'}
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Tents Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-48">
-                        <h2 className="text-lg font-medium text-gray-500 mb-2">Total Tents Booked</h2>
-                        <div className="text-5xl font-bold text-blue-600">
-                            {loading ? '...' : stats?.totalTents ?? 0}
-                        </div>
+        <div className="min-h-screen bg-gray-50 p-8 pt-10">
+            <div className="max-w-6xl mx-auto space-y-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+                        <p className="text-slate-500 mt-1">Live overview of TESA specific bookings</p>
                     </div>
-
-                    {/* Chairs Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-48">
-                        <h2 className="text-lg font-medium text-gray-500 mb-2">Chairs Rented (Dozen)</h2>
-                        <div className="text-5xl font-bold text-emerald-600">
-                            {loading ? '...' : stats?.totalChairs ?? 0}
-                        </div>
-                        <span className="text-sm text-gray-400 mt-2">Dozen</span>
-                    </div>
-
-                    {/* Tables Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-48">
-                        <h2 className="text-lg font-medium text-gray-500 mb-2">Tables Rented</h2>
-                        <div className="text-5xl font-bold text-purple-600">
-                            {loading ? '...' : stats?.totalTables ?? 0}
-                        </div>
-                        <span className="text-sm text-gray-400 mt-2">Units</span>
+                    <div>
+                        <RefreshButton />
                     </div>
                 </div>
 
-                <div className="mt-12 text-center text-sm text-gray-400">
-                    <p>Data is fetched directly from Firestore.</p>
+                <Suspense fallback={<div className="text-center py-20 text-slate-500">Loading stats...</div>}>
+                    <AdminDashboard stats={stats} venues={venues} />
+                </Suspense>
+
+                <div className="mt-12 text-center text-sm text-gray-400 pb-10">
+                    <p>Metrics fetched directly from live database.</p>
                 </div>
             </div>
         </div>
-    );
-}
-
-export default function StatsPage() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <StatsContent />
-        </Suspense>
     );
 }
