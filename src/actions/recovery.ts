@@ -238,3 +238,239 @@ export async function recoverOlawuyiBooking() {
         return { success: false, error: error.message };
     }
 }
+
+export async function recoverAkinpadeBooking() {
+    const venueSlug = 'nlng-front';
+    const stationId = '27';
+    const venueRef = doc(db, 'sections', venueSlug);
+
+    try {
+        console.log(`Starting recovery for ${venueSlug} - Seat ${stationId}...`);
+        
+        const snap = await getDoc(venueRef);
+        if (!snap.exists()) {
+            return { success: false, error: "Venue nlng-front not found" };
+        }
+
+        const venueData = snap.data() as Venue;
+        const stations = venueData.stations || [];
+
+        // Check if station 27 exists
+        const stationIndex = stations.findIndex(s => s.id === stationId);
+        if (stationIndex === -1) {
+            return { success: false, error: "Station 27 not found in nlng-front" };
+        }
+
+        // Prepare the updated station object
+        const updatedStation: Station = {
+            ...stations[stationIndex],
+            status: 'booked',
+            lockedAt: Date.now(),
+            paymentReference: 'ER|A11CC014F4',
+            bookedBy: {
+                name: 'Akinpade Oluwapelumi',
+                email: 'oluwapelumiakinpade@gmail.com',
+                phone: '09017825010',
+                matricNumber: '223297',
+                tentName: "AKINPADE",
+                rentals: {
+                    chairs: 2, // 2 Dozens
+                    tables: 2
+                },
+                fees: {
+                    base: 0,
+                    logistics: 3000,
+                    rentalTotal: (2 * 2500) + (2 * 2000) // 5000 + 4000 = 9000
+                    // Total = 6500 (Tent) + 9000 (Rentals) + 3000 (Logistics) = 18500.
+                }
+            }
+        };
+
+        // Update the array locally
+        stations[stationIndex] = updatedStation;
+
+        // Save to Firestore
+        await updateDoc(venueRef, { stations });
+        console.log("Database updated successfully for Akinpade.");
+
+        // Send Receipt
+        await sendReceipt({
+            email: 'oluwapelumiakinpade@gmail.com',
+            name: 'Akinpade Oluwapelumi',
+            bookingDetails: [`${venueData.name} - Seat ${stationId}`],
+            transactionRef: updatedStation.paymentReference!,
+            amount: 18500,
+            date: 'February 18, 2026',
+            chairs: 2,
+            tables: 2,
+            baseFee: 0,
+            logisticsFee: 3000,
+            tentName: "AKINPADE"
+        });
+
+        console.log("Recovery Email sent for Akinpade.");
+        return { success: true, message: "Booking recovered and receipt sent for Akinpade Oluwapelumi." };
+
+    } catch (error: any) {
+        console.error("Recovery failed:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function recoverOlaoyeBooking() {
+    const venueSlug = 'nlng-front';
+    const stationId = '25';
+    const venueRef = doc(db, 'sections', venueSlug);
+
+    try {
+        console.log(`Starting recovery for ${venueSlug} - Seat ${stationId}...`);
+        
+        const snap = await getDoc(venueRef);
+        if (!snap.exists()) {
+            return { success: false, error: "Venue nlng-front not found" };
+        }
+
+        const venueData = snap.data() as Venue;
+        const stations = venueData.stations || [];
+
+        // Check if station 25 exists
+        const stationIndex = stations.findIndex(s => s.id === stationId);
+        if (stationIndex === -1) {
+            return { success: false, error: "Station 25 not found in nlng-front" };
+        }
+
+        const transRef = 'ER|A11' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        // Prepare the updated station object
+        const updatedStation: Station = {
+            ...stations[stationIndex],
+            status: 'booked',
+            lockedAt: Date.now(),
+            paymentReference: transRef,
+            bookedBy: {
+                name: 'Olaoye Praise-God',
+                email: 'praix1y@gmail.com',
+                phone: '09035685615',
+                matricNumber: '223228',
+                tentName: "Olaoye Praise",
+                rentals: {
+                    chairs: 1, // 1 Dozen
+                    tables: 0
+                },
+                fees: {
+                    base: 0,
+                    logistics: 3000,
+                    rentalTotal: 2500 // 1 dozen chairs
+                }
+            }
+        };
+
+        // Update the array locally
+        stations[stationIndex] = updatedStation;
+
+        // Save to Firestore
+        await updateDoc(venueRef, { stations });
+        console.log("Database updated successfully for Olaoye.");
+
+        // Send Receipt
+        await sendReceipt({
+            email: 'praix1y@gmail.com',
+            name: 'Olaoye Praise-God',
+            bookingDetails: [`${venueData.name} - Seat ${stationId}`],
+            transactionRef: transRef,
+            amount: 12000,
+            date: 'February 19, 2026',
+            chairs: 1,
+            tables: 0,
+            baseFee: 0,
+            logisticsFee: 3000,
+            tentName: "Olaoye Praise"
+        });
+
+        console.log("Recovery Email sent for Olaoye.");
+        return { success: true, message: `Booking recovered and receipt sent for Olaoye Praise-God. Trans Ref: ${transRef}` };
+
+    } catch (error: any) {
+        console.error("Recovery failed:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function recoverLawalBooking() {
+    const venueSlug = 'elect-tarmac';
+    const stationId = '16';
+    const venueRef = doc(db, 'sections', venueSlug);
+
+    try {
+        console.log(`Starting recovery for ${venueSlug} - Seat ${stationId}...`);
+        
+        const snap = await getDoc(venueRef);
+        if (!snap.exists()) {
+            return { success: false, error: "Venue elect-tarmac not found" };
+        }
+
+        const venueData = snap.data() as Venue;
+        const stations = venueData.stations || [];
+
+        // Check if station 16 exists
+        const stationIndex = stations.findIndex(s => s.id === stationId);
+        if (stationIndex === -1) {
+            return { success: false, error: "Station 16 not found in elect-tarmac" };
+        }
+
+        const transRef = 'ER|A11' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        // Prepare the updated station object
+        const updatedStation: Station = {
+            ...stations[stationIndex],
+            status: 'booked',
+            lockedAt: Date.now(),
+            paymentReference: transRef,
+            bookedBy: {
+                name: 'LawalRidwanAbolaji Abolaji and Ogundele Idris',
+                email: 'lawalridwan225@gmail.com',
+                phone: '09070932478',
+                matricNumber: '223009',
+                tentName: "Lawal and Ogundele",
+                rentals: {
+                    chairs: 4, // 4 Dozens
+                    tables: 2
+                },
+                fees: {
+                    base: 0,
+                    logistics: 3000,
+                    rentalTotal: (4 * 2500) + (2 * 2000) // 10000 + 4000 = 14000
+                }
+            }
+        };
+
+        // Update the array locally
+        stations[stationIndex] = updatedStation;
+
+        // Save to Firestore
+        await updateDoc(venueRef, { stations });
+        console.log("Database updated successfully for Lawal and Ogundele.");
+
+        // Send Receipt
+        await sendReceipt({
+            email: 'lawalridwan225@gmail.com',
+            name: 'LawalRidwanAbolaji Abolaji and Ogundele Idris',
+            bookingDetails: [`${venueData.name} - Seat ${stationId}`],
+            transactionRef: transRef,
+            amount: 23500, // 6500 + 14000 + 3000 = 23500
+            date: 'February 05, 2026',
+            chairs: 4,
+            tables: 2,
+            baseFee: 0,
+            logisticsFee: 3000,
+            tentName: "Lawal and Ogundele"
+        });
+
+        console.log("Recovery Email sent for Lawal and Ogundele.");
+        return { success: true, message: `Booking recovered and receipt sent for Lawal and Ogundele. Trans Ref: ${transRef}` };
+
+    } catch (error: any) {
+        console.error("Recovery failed:", error);
+        return { success: false, error: error.message };
+    }
+}

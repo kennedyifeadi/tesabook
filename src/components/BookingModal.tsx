@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { initiateBooking } from '@/actions/payment';
 import { toast } from 'sonner';
+import { IS_BOOKING_CLOSED } from '@/utils/constants';
 
 interface BookingModalProps {
     selectedStations: string[];
@@ -23,6 +24,12 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        if (IS_BOOKING_CLOSED) {
+            toast.error("Booking time has expired!");
+            return;
+        }
+
         setLoading(true);
 
         const formData = new FormData(e.currentTarget);
@@ -133,10 +140,10 @@ export default function BookingModal({ selectedStations, onClose }: BookingModal
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || IS_BOOKING_CLOSED}
                         className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 mt-4 flex justify-center"
                     >
-                        {loading ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
+                        {IS_BOOKING_CLOSED ? 'Booking Closed' : (loading ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`)}
                     </button>
                 </form>
             </div>

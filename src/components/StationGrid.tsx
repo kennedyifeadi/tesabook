@@ -2,6 +2,7 @@ import { Station, Venue } from '@/types/venue';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { IS_BOOKING_CLOSED } from '@/utils/constants';
 
 interface StationGridProps {
     venue: Venue;
@@ -12,6 +13,10 @@ interface StationGridProps {
 
 export default function StationGrid({ venue, selectedStations, onToggleSelect, onClose }: StationGridProps) {
     const handleStationClick = (station: Station) => {
+        if (IS_BOOKING_CLOSED) {
+            toast.error("Booking time has expired!");
+            return;
+        }
         if (station.status !== 'available') return;
 
         // Check limit if selecting a new station
@@ -51,7 +56,7 @@ export default function StationGrid({ venue, selectedStations, onToggleSelect, o
                                 <button
                                     key={station.id}
                                     onClick={() => handleStationClick(station)}
-                                    disabled={!isAvailable}
+                                    disabled={!isAvailable || IS_BOOKING_CLOSED}
                                     className={twMerge(
                                         "aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-200 border-2",
                                         // Status colors

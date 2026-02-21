@@ -8,6 +8,7 @@ import { useRealTimeSections } from "@/hooks/useRealTimeSections";
 import { Toaster, toast } from "sonner";
 import BookingModal from "@/components/BookingModal";
 import { Venue } from "@/types/venue";
+import { IS_BOOKING_CLOSED } from "@/utils/constants";
 
 export default function Home() {
   const { sections, loading, error } = useRealTimeSections();
@@ -96,6 +97,26 @@ export default function Home() {
           selectedStations={selectedStations}
           onClose={() => setIsBookingModalOpen(false)}
         />
+      )}
+
+      {IS_BOOKING_CLOSED && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4 select-none touch-none">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 0h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Booking is Closed</h2>
+            <p className="text-slate-600 mb-8 leading-relaxed">
+              The priority booking period has officially ended. You can no longer book new tents.
+            </p>
+            <div className="bg-slate-50 rounded-2xl p-4 text-sm font-medium text-slate-500">
+              Thank you for choosing TESA.
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

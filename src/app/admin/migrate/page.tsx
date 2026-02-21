@@ -40,7 +40,7 @@ export default function MigratePage() {
 
             <div className="mb-6">
                 <h2 className="font-semibold mb-2">Venue Migration</h2>
-                <p className="mb-2">Migrate 'Civil Front' / 'New Civil' to 'Ftech tarmac' (10 slots).</p>
+                <p className="mb-2">Migrate &apos;Civil Front&apos; / &apos;New Civil&apos; to &apos;Ftech tarmac&apos; (10 slots).</p>
                 <button
                     onClick={handleMigrate}
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -116,6 +116,63 @@ export default function MigratePage() {
                     className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                 >
                     Recover Olawuyi Booking
+                </button>
+
+                <div className="h-4"></div>
+
+                <p className="mb-2">Recover booking for Akinpade Oluwapelumi (NLNG FRONT - Seat 27).</p>
+                <button 
+                    onClick={async () => {
+                        setStatus('Running Recovery for Akinpade...');
+                        try {
+                            const { recoverAkinpadeBooking } = await import('@/actions/recovery');
+                            const result = await recoverAkinpadeBooking();
+                            setStatus(result.success ? `Success: ${result.message}` : `Error: ${result.error}`);
+                        } catch (e: any) {
+                            setStatus(`Error: ${e.message}`);
+                        }
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                >
+                    Recover Akinpade Booking
+                </button>
+
+                <div className="h-4"></div>
+
+                <p className="mb-2">Recover booking for Olaoye Praise-God (NLNG FRONT - Seat 25).</p>
+                <button 
+                    onClick={async () => {
+                        setStatus('Running Recovery for Olaoye...');
+                        try {
+                            const { recoverOlaoyeBooking } = await import('@/actions/recovery');
+                            const result = await recoverOlaoyeBooking();
+                            setStatus(result.success ? `Success: ${result.message}` : `Error: ${result.error}`);
+                        } catch (e: any) {
+                            setStatus(`Error: ${e.message}`);
+                        }
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                >
+                    Recover Olaoye Booking
+                </button>
+
+                <div className="h-4"></div>
+
+                <p className="mb-2">Recover booking for Lawal & Ogundele (Elect Tarmac - Seat 16).</p>
+                <button 
+                    onClick={async () => {
+                        setStatus('Running Recovery for Lawal...');
+                        try {
+                            const { recoverLawalBooking } = await import('@/actions/recovery');
+                            const result = await recoverLawalBooking();
+                            setStatus(result.success ? `Success: ${result.message}` : `Error: ${result.error}`);
+                        } catch (e: any) {
+                            setStatus(`Error: ${e.message}`);
+                        }
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                >
+                    Recover Lawal Booking
                 </button>
             </div>
 
